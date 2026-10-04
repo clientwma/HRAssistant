@@ -58,8 +58,8 @@ def format_docs(docs) -> str:
 
 embeddings_model = OpenAIEmbeddings(
     model=GEMINI_EMBED_MODEL,
-    api_key=OPENAI_API_KEY,
-    base_url=OPENAI_BASE_URL,
+    api_key=GEMINI_API_KEY,
+    base_url=GEMINI_BASE_URL,
 )
 
 vector_store = PineconeVectorStore(
