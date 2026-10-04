@@ -5,7 +5,6 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from openai import OpenAI
 from pinecone import Pinecone
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
@@ -23,11 +22,6 @@ logger = logging.getLogger(__name__)
 # ==========================================
 # 1. CONFIGURATION & ENVIRONMENT SETUP
 # ==========================================
-OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
-OPENAI_EMBED_MODEL = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)
-
 GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-1.5-flash")
 GEMINI_EMBED_MODEL = os.getenv("GEMINI_EMBED_MODEL", "text-embedding-004")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
@@ -92,7 +86,7 @@ rag_chain = (
 )
 
 # ==========================================
-# 3. FASTAPI APPLICATION SETUP (Only 1 instance)
+# 3. FASTAPI APPLICATION SETUP
 # ==========================================
 app = FastAPI(title="HR Assistant RAG Chatbot")
 
@@ -252,7 +246,6 @@ CHAT_UI_HTML = """
 </body>
 </html>
 """
-
 @app.get("/", response_class=HTMLResponse)
 def get_chat_ui():
     return CHAT_UI_HTML
