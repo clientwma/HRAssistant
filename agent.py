@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from pinecone import Pinecone
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-1.5-flash")
 GEMINI_EMBED_MODEL = os.getenv("GEMINI_EMBED_MODEL", "text-embedding-004")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
-GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL", None)
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
 HR_INDEX_NAME = os.getenv("HR_INDEX_NAME", "hr-policies")
@@ -33,12 +32,11 @@ HR_INDEX_NAME = os.getenv("HR_INDEX_NAME", "hr-policies")
 # ==========================================
 # 2. RAG PIPELINE INITIALIZATION
 # ==========================================
-llm = ChatOpenAI(
+llm = ChatGoogleGenerativeAI(
     model=GEMINI_CHAT_MODEL,
-    api_key=GEMINI_API_KEY,
-    base_url=GEMINI_BASE_URL,
+    google_api_key=GEMINI_API_KEY,
     temperature=0.2,
-    max_tokens=300,
+    max_output_tokens=300,
 )
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
@@ -50,10 +48,9 @@ def format_docs(docs) -> str:
         for d in docs
     )
 
-embeddings_model = OpenAIEmbeddings(
+embeddings_model = GoogleGenerativeAIEmbeddings(
     model=GEMINI_EMBED_MODEL,
-    api_key=GEMINI_API_KEY,
-    base_url=GEMINI_BASE_URL,
+    google_api_key=GEMINI_API_KEY,
 )
 
 vector_store = PineconeVectorStore(
