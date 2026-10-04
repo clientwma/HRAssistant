@@ -145,3 +145,124 @@ def chat(request: ChatRequest):
             status_code=500,
             detail="HR Assistant is temporarily unavailable. Please try again in a moment."
         )
+# ==========================================
+# 3. FASTAPI APPLICATION SETUP
+# ==========================================
+app = FastAPI(title="HR Assistant RAG Chatbot")
+
+# Simple HTML Chat Interface
+CHAT_UI_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Assistant - Training Academy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col justify-between">
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-lg font-semibold">HR Assistant RAG Chatbot</h1>
+        <span class="text-xs bg-indigo-500 px-2 py-1 rounded-full">Online</span>
+    </header>
+
+    <!-- Chat Box -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto">
+        <div class="flex items-start space-x-2">
+            <div class="bg-white border border-slate-200 text-slate-800 p-3 rounded-lg shadow-sm max-w-lg">
+                Hello! I am your HR Assistant. Ask me anything about our training academy policies.
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Form -->
+    <footer class="bg-white border-t border-slate-200 p-4 shadow-lg">
+        <form id="chat-form" class="max-w-3xl mx-auto flex gap-2">
+            <input 
+                id="message-input" 
+                type="text" 
+                placeholder="Type your HR policy question here..." 
+                required
+                class="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500"
+            >
+            <button 
+                type="submit" 
+                class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
+            >
+                Send
+            </button>
+        </form>
+    </footer>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const sessionId = "web-user-" + Math.random().toString(36.substring(2, 9));
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            // Append User Message
+            appendMessage(text, 'user');
+            messageInput.value = '';
+            messageInput.disabled = true;
+
+            // Show typing indicator / loading state
+            const loadingId = appendMessage('Thinking...', 'assistant', true);
+
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId, message: text })
+                });
+                const data = await res.json();
+                
+                // Remove loading and append actual response
+                document.getElementById(loadingId).remove();
+                if (res.ok) {
+                    appendMessage(data.response, 'assistant');
+                } else {
+                    appendMessage(data.detail || 'Something went wrong.', 'assistant');
+                }
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                appendMessage('Network error. Please try again.', 'assistant');
+            } finally {
+                messageInput.disabled = false;
+                messageInput.focus();
+            }
+        });
+
+        function appendMessage(text, sender, isLoading = false) {
+            const id = 'msg-' + Math.random().toString(36).substring(2, 9);
+            const isUser = sender === 'user';
+            const wrapper = document.createElement('div');
+            wrapper.id = id;
+            wrapper.className = `flex items-start space-x-2 ${isUser ? 'justify-end' : ''}`;
+            
+            wrapper.innerHTML = `
+                <div class="${isUser ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-800'} p-3 rounded-lg shadow-sm max-w-lg ${isLoading ? 'italic text-slate-400' : ''}">
+                    ${escapeHtml(text)}
+                </div>
+            `;
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return id;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
+"""
+
+@app.get("/", response_class=HTMLResponse)
+def get_chat_ui():
+    return CHAT_UI_HTML
