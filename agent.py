@@ -27,6 +27,12 @@ OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
 OPENAI_EMBED_MODEL = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)
+
+GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-1.5-flash")
+GEMINI_EMBED_MODEL = os.getenv("GEMINI_EMBED_MODEL", "text-embedding-004")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
+GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL", None)
+
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
 HR_INDEX_NAME = os.getenv("HR_INDEX_NAME", "hr-policies")
 
@@ -34,9 +40,9 @@ HR_INDEX_NAME = os.getenv("HR_INDEX_NAME", "hr-policies")
 # 2. RAG PIPELINE INITIALIZATION
 # ==========================================
 llm = ChatOpenAI(
-    model=OPENAI_CHAT_MODEL,
-    api_key=OPENAI_API_KEY,
-    base_url=OPENAI_BASE_URL,
+    model=GEMINI_CHAT_MODEL,
+    api_key=GEMINI_API_KEY,
+    base_url=GEMINI_BASE_URL,
     temperature=0.2,
     max_tokens=300,
 )
@@ -51,7 +57,7 @@ def format_docs(docs) -> str:
     )
 
 embeddings_model = OpenAIEmbeddings(
-    model=OPENAI_EMBED_MODEL,
+    model=GEMINI_EMBED_MODEL,
     api_key=OPENAI_API_KEY,
     base_url=OPENAI_BASE_URL,
 )
