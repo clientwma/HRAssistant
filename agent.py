@@ -29,7 +29,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
 HR_INDEX_NAME = os.getenv("HR_INDEX_NAME", "hr-policies")
-NGROK_AUTH_TOKEN = os.environ.get("NGROK_AUTH_TOKEN")
 
 # ==========================================
 # 2. RAG PIPELINE INITIALIZATION
@@ -45,14 +44,12 @@ llm = ChatOpenAI(
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index(HR_INDEX_NAME)
 
-# 2a. String Formatter function
 def format_docs(docs) -> str:
     return "\n\n".join(
         f"- {d.metadata.get('text', '')}: {d.page_content}"
         for d in docs
     )
 
-# 2b. Define retriever embeddings model and vector store
 embeddings_model = OpenAIEmbeddings(
     model=OPENAI_EMBED_MODEL,
     api_key=OPENAI_API_KEY,
@@ -65,11 +62,8 @@ vector_store = PineconeVectorStore(
     text_key="text",
 )
 
-retriever = vector_store.as_retriever(
-    search_kwargs={"k": 2}  # return top 2 most similar chunks
-)
+retriever = vector_store.as_retriever(search_kwargs={"k": 2})
 
-# 2c. Create PROMPT TEMPLATE
 retrieval_prompt_template = ChatPromptTemplate.from_messages([
     ("system",
      "You are HR assistant for a Training academy. "
@@ -77,12 +71,9 @@ retrieval_prompt_template = ChatPromptTemplate.from_messages([
      "If the context does not contain a relevant answer, say you don't have a "
      "matching recommendation - never cite references to the policies from other companies or trainings."
      ),
-    ("human",
-     "Context:\n{context}\n\nQuestion: {question}"
-     ),
+    ("human", "Context:\n{context}\n\nQuestion: {question}"),
 ])
 
-# 2d. Tie it together using langchain
 parser = StrOutputParser()
 rag_chain = (
     {
@@ -95,7 +86,7 @@ rag_chain = (
 )
 
 # ==========================================
-# 3. FASTAPI APPLICATION SETUP
+# 3. FASTAPI APPLICATION SETUP (Only 1 instance)
 # ==========================================
 app = FastAPI(title="HR Assistant RAG Chatbot")
 
@@ -112,13 +103,8 @@ class ChatResponse(BaseModel):
 def health_check():
     return {"status": "ok", "index": HR_INDEX_NAME}
 
-
 @app.post("/chat", response_model=ChatResponse, tags=["Agent"])
 def chat(request: ChatRequest):
-    """
-    Main chat endpoint. Pass the same session_id across turns
-    to maintain conversation context within a session.
-    """
     logger.info(
         "Incoming request",
         extra={"session_id": request.session_id, "message_length": len(request.message)}
@@ -145,12 +131,10 @@ def chat(request: ChatRequest):
             status_code=500,
             detail="HR Assistant is temporarily unavailable. Please try again in a moment."
         )
-# ==========================================
-# 3. FASTAPI APPLICATION SETUP
-# ==========================================
-app = FastAPI(title="HR Assistant RAG Chatbot")
 
-# Simple HTML Chat Interface
+# ==========================================
+# 4. WEB CHAT UI ROUTE
+# ==========================================
 CHAT_UI_HTML = """
 <!DOCTYPE html>
 <html lang="en">
